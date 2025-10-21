@@ -1,11 +1,12 @@
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ResourceContext } from '../types.ts';
 
 /**
  * Create example entries resource definition (boilerplate).
  *
  * Exposes a static list() and read() for demonstration purposes.
  */
-export function entries() {
+export function entries(_config: ResourceContext) {
   return {
     title: 'Entries',
     description: 'Access entries as resources (boilerplate).',

@@ -1,14 +1,8 @@
-/**
- * OSS Review MCP Server
- *
- * Minimal MCP server that exposes a single example tool (`search_components`)
- * and one example resource (`entries`). Designed as boilerplate to extend.
- */
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import diagnostics from 'diagnostics';
-import { search } from './tools/search.ts';
 import { entries } from './resources/entries.ts';
+import { search } from './tools/search.ts';
+import diagnostics from 'diagnostics';
 
 const debug = diagnostics('oss-review:mcp');
 
@@ -29,11 +23,11 @@ export class Server {
     });
 
     this.tools({
-      search: search({ server: this.server })
+      search: search({ server: this })
     });
 
     this.resources({
-      entries: entries({ server: this.server })
+      entries: entries({ server: this })
     });
   }
 
