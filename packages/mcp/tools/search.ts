@@ -8,10 +8,10 @@ interface Args {
 /**
  * Create search tool for MCP server (boilerplate).
  *
- * @param _config - Placeholder for future configuration
+ * @param context - Tool context containing server and optional configuration
  * @returns Tool definition with metadata and exec()
  */
-export function search(_config: ToolContext) {
+export function search(context: ToolContext) {
   /**
    * Execute the search tool.
    *

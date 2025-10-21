@@ -1,33 +1,49 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import packageInfo from '../../package.json' with { type: 'json' };
 import { entries } from './resources/entries.ts';
 import { search } from './tools/search.ts';
+import { readFileSync } from 'node:fs';
 import diagnostics from 'diagnostics';
+import { join } from 'node:path';
+import type { ConfigInstance } from '../config/index.ts';
 
 const debug = diagnostics('oss-review:mcp');
 
 /**
  * Bootstrap and manage the MCP server lifecycle.
  */
+export interface ServerOptions {
+  config?: ConfigInstance;
+}
+
 export class Server {
   private server: McpServer;
+  private config?: ConfigInstance;
 
   /**
    * Create a new MCP server instance with a single search tool and entries resource.
    */
-  constructor() {
+  constructor(options: ServerOptions = {}) {
+    this.config = options.config;
     this.server = new McpServer({
       title: 'OSS Review MCP Server',
-      name: 'oss-review',
-      version: '0.0.1'
+      name: packageInfo.name,
+      version: packageInfo.version
+    }, {
+      //
+      // Instructions describing how to use the server and its features, which
+      // should allow LLMs/Agents to use the server correctly.
+      //
+      instructions: readFileSync(join(import.meta.dirname, 'instructions.md'), 'utf8')
     });
 
     this.tools({
-      search: search({ server: this })
+      search: search({ server: this, config: this.config })
     });
 
     this.resources({
-      entries: entries({ server: this })
+      entries: entries({ server: this, config: this.config })
     });
   }
 
@@ -92,6 +108,7 @@ export class Server {
    */
   async start(transport?: any) {
     const t = transport || new StdioServerTransport();
+
     await this.server.connect(t);
     return this.server;
   }
@@ -101,20 +118,18 @@ export class Server {
    */
   async close(): Promise<void> {
     try {
-      const transport = (this.server as any).transport;
-      if (transport && typeof transport.close === 'function') await transport.close();
-    } catch {}
-    try {
-      if (typeof (this.server as any).close === 'function') await (this.server as any).close();
-    } catch {}
+      this.server.close();
+    } catch (error) {
+      debug('failed to close server', error);
+    }
   }
 }
 
 /**
  * Factory for creating a new MCP server instance.
  */
-export function mcp(): Server {
+export function mcp(options: ServerOptions = {}): Server {
   debug('creating oss-review mcp instance');
-  return new Server();
+  return new Server(options);
 }
 

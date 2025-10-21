@@ -1,3 +1,5 @@
+import type { ConfigInstance } from '../config/index.ts';
+
 export type ServerInstance = import('./index').Server;
 
 export interface MCPTextContentItem {
@@ -13,10 +15,12 @@ export interface MCPTextResponse {
 
 export interface ToolContext {
   server: ServerInstance;
+  config?: ConfigInstance;
 }
 
 export interface ResourceContext {
   server: ServerInstance;
+  config?: ConfigInstance;
 }
 
 export interface SearchDocument {
