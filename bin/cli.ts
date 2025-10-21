@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
+import { mergeConfigs, resolveConfigs, type ResolverCLIOptions } from '../packages/resolver/index';
 import packageInfo from '../package.json' with { type: 'json' };
 import { mcp } from '../packages/mcp/index';
-import { mergeConfigs, resolveConfigs, type ResolverCLIOptions } from '../packages/resolver/index';
+import { Command } from 'commander';
 
 /**
  * Construct the oss-review CLI using Commander.
