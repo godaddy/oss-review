@@ -1,0 +1,39 @@
+{
+  "name": "oss-review",
+  "version": "0.0.1",
+  "description": "OSS Review MCP server boilerplate",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "oss-review": "./dist/bin/cli.js"
+  },
+  "scripts": {
+    "build": "tsup-node",
+    "prepublishOnly": "npm run build",
+    "pretest": "npm run build",
+    "test": "node --test 'packages/**/*.test.ts'",
+    "test:watch": "node --test --watch 'packages/**/*.test.ts'"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "packages"
+  ],
+  "exports": {
+    "./mcp": {
+      "types": "./dist/packages/mcp/index.d.ts",
+      "import": "./dist/packages/mcp/index.js"
+    }
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "diagnostics": "^3.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.9",
+    "assume": "^2.3.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  }
+}
