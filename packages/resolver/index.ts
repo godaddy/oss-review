@@ -360,6 +360,8 @@ async function loadFromFile(filePath: string): Promise<ConfigInstance> {
  * @returns Combined configuration instance
  */
 export function mergeConfigs(configs: ConfigInstance[]): ConfigInstance {
+  if (configs.length === 0) return new Config();
+
   const merged = new Config();
   for (const config of configs) Object.assign(merged, config);
   return merged;

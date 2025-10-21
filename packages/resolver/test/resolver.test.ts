@@ -72,6 +72,10 @@ describe('mergeConfigs', () => {
     const merged = mergeConfigs([]);
 
     assume(merged).is.instanceOf(Config);
-    assume(Object.keys(merged)).is.length(0);
+    assume(merged.licenses).deep.equals({ green: [], yellow: [], red: [] });
+    assume(merged.resources).deep.equals([]);
+    assume(merged.getDetection()).deep.equals({});
+    assume(merged.getProfile()).deep.equals({});
+    assume(merged.getInstructions()).deep.equals([]);
   });
 });
