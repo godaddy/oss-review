@@ -1,4 +1,4 @@
-import type { GetPromptResult } from '@modelcontextprotocol/sdk/dist/esm/types.js';
+import type { GetPromptResult, PromptArgsRawShape } from '@modelcontextprotocol/sdk/dist/esm/types.js';
 import type { ConfigInstance } from '../config/index.ts';
 
 export type ServerInstance = import('./index').Server;
@@ -57,7 +57,7 @@ export interface PromptDefinition {
   /** Brief description surfaced to clients. */
   description: string;
   /** Optional schema describing accepted arguments. */
-  argsSchema?: unknown;
+  argsSchema?: PromptArgsRawShape;
   /** Execution handler returning a formatted MCP prompt response. */
   exec: PromptExecutor;
 }

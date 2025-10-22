@@ -159,12 +159,15 @@ export class Server {
    */
   public template(input: string, data: Record<string, unknown>): string {
     return input.replace(/{{\s*([\w.]+)\s*}}/g, (match, key) => {
-      const value = key.split('.').reduce<unknown>((acc, segment) => {
-        if (acc && typeof acc === 'object' && segment in acc) {
-          return (acc as Record<string, unknown>)[segment];
+      let value: unknown = data;
+      for (const segment of key.split('.')) {
+        if (value && typeof value === 'object' && segment in (value as Record<string, unknown>)) {
+          value = (value as Record<string, unknown>)[segment];
+        } else {
+          value = undefined;
+          break;
         }
-        return undefined;
-      }, data);
+      }
 
       if (value === undefined || value === null) return match;
       if (typeof value === 'object') return JSON.stringify(value);
@@ -222,10 +225,15 @@ export function mcp(options: ServerOptions = {}): Server {
  */
 export function template(template: string, data: Record<string, unknown>): string {
   return template.replace(/{{\s*([\w.]+)\s*}}/g, (match, key) => {
-    const value = key.split('.').reduce<unknown>((acc, segment) => {
-      if (acc && typeof acc === 'object' && segment in acc) return (acc as Record<string, unknown>)[segment];
-      return undefined;
-    }, data);
+    let value: unknown = data;
+    for (const segment of key.split('.')) {
+      if (value && typeof value === 'object' && segment in (value as Record<string, unknown>)) {
+        value = (value as Record<string, unknown>)[segment];
+      } else {
+        value = undefined;
+        break;
+      }
+    }
 
     if (value === undefined || value === null) return match;
     if (typeof value === 'object') return JSON.stringify(value);

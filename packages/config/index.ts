@@ -29,6 +29,8 @@ export interface LicensePolicy {
   red?: LicenseEntry[];
 }
 
+export type DetectionConfig = Record<string, DetectionPattern[]>;
+
 export interface ConfigOptions {
   /** Declared license policy grouped by category. */
   licenses?: LicensePolicy;
@@ -130,7 +132,8 @@ export class Config {
     this.instructions = instructions.map((instruction) => ({ ...instruction }));
 
     this.detectionBuckets = {};
-    for (const [bucket, patterns] of Object.entries(detection)) {
+    const detectionConfig = detection as DetectionConfig;
+    for (const [bucket, patterns] of Object.entries(detectionConfig)) {
       this.detectionBuckets[bucket] = patterns.map((pattern) => ({ ...pattern }));
     }
 
@@ -382,11 +385,11 @@ export class Config {
  * @param value - Value to insert when id is new
  * @param getId - Optional extractor when array items do not expose `id`
  */
-function checkAndSet<T extends Record<string, unknown>>(
+function checkAndSet<T>(
   list: T[],
   id: string,
   value: T,
-  getId: (item: T) => string = (item) => String(item.id ?? '')
+  getId: (item: T) => string = (item: any) => String(item.id ?? '')
 ): void {
   const identifier = id.trim();
   const index = list.findIndex((item) => getId(item) === identifier);

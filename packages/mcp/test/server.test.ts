@@ -13,6 +13,12 @@ function fixturePath(name: string): string {
   return join(fixturesDir, name);
 }
 
+interface ConfigOptions {
+  profile?: { name: string; securityEmail: string };
+  resources?: { name: string; path: string }[];
+  instructions?: { name: string; content: string }[];
+}
+
 /**
  * Create a configuration instance pointing at the test fixtures directory.
  *
@@ -122,11 +128,12 @@ describe('mcp server', function suite() {
       assume(promptMessages).has.length(2);
       const guidance = promptMessages[0];
       assume(guidance.content).has.property('type', 'text');
-      assume(guidance.content).has.property('text').includes('Repository under review: oss-review');
+      assume(guidance.content?.text).includes('Repository under review: oss-review.');
       assume(guidance.content?.text).includes('security controls');
 
       const instruction = promptMessages[1];
-      assume(instruction.content).has.property('text').includes('GoDaddy');
+      assume(instruction.content).has.property('type', 'text');
+      assume(instruction.content?.text).includes('GoDaddy');
       assume(instruction.content?.text).includes('oss-review');
     });
 
@@ -137,7 +144,7 @@ describe('mcp server', function suite() {
       const promptMessages = result.messages ?? [];
       assume(promptMessages).has.length(1);
       assume(promptMessages[0]?.content?.type).equals('text');
-      assume(promptMessages[0]?.content?.text).includes('Repository under review: oss-review');
+      assume(promptMessages[0]?.content?.text).includes('Repository under review: oss-review.');
       assume(promptMessages[0]?.content?.text).includes('general readiness');
     });
   });

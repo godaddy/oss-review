@@ -14,5 +14,5 @@ export default defineConfig({
   clean: true,
   skipNodeModulesBundle: true,
   treeshake: true,
-  onSuccess: 'mkdir -p dist/packages/mcp dist/bin && cp packages/mcp/instructions.md dist/packages/mcp/instructions.md && cp packages/mcp/instructions.md dist/bin/instructions.md'
+  onSuccess: 'mkdir -p dist/packages/mcp dist/packages/mcp/prompts dist/bin && cp packages/mcp/instructions.md dist/packages/mcp/instructions.md && cp packages/mcp/instructions.md dist/bin/instructions.md && cp packages/mcp/prompts/persona.md dist/packages/mcp/prompts/persona.md'
 });
