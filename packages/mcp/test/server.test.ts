@@ -2,7 +2,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { mcp, Server } from '../index.ts';
 import Config from '../../config/index.ts';
-import { describe, it, afterEach } from 'node:test';
+import { afterEach, describe, it } from 'node:test';
 import assume from 'assume';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -114,6 +114,19 @@ describe('mcp server', function suite() {
     });
   });
 
+  describe('tools', () => {
+    it('registers secretlint tool', async function run() {
+      ({ server, client } = await create());
+
+      const list = await client.listTools();
+      const secretlintTool = list.tools.find((tool) => tool.name === 'secretlint');
+
+      assume(secretlintTool).is.truthy();
+      assume(secretlintTool?.inputSchema).is.truthy();
+      assume(secretlintTool?.description).includes('Secretlint');
+    });
+  });
+
   describe('prompts', () => {
     it('lists and renders the review prompt with instructions', async function run() {
       ({ server, client } = await create({
@@ -125,13 +138,18 @@ describe('mcp server', function suite() {
 
       const result = await client.getPrompt({ name: 'review', arguments: { repository: 'oss-review', focus: 'security controls' } });
       const promptMessages = result.messages ?? [];
-      assume(promptMessages).has.length(2);
-      const guidance = promptMessages[0];
+      assume(promptMessages).has.length(3);
+
+      const persona = promptMessages[0];
+      assume(persona.content).has.property('type', 'text');
+      assume(persona.content?.text).includes('OSS Readiness Deep Reviewer');
+
+      const guidance = promptMessages[1];
       assume(guidance.content).has.property('type', 'text');
       assume(guidance.content?.text).includes('Repository under review: oss-review.');
       assume(guidance.content?.text).includes('security controls');
 
-      const instruction = promptMessages[1];
+      const instruction = promptMessages[2];
       assume(instruction.content).has.property('type', 'text');
       assume(instruction.content?.text).includes('GoDaddy');
       assume(instruction.content?.text).includes('oss-review');
@@ -142,10 +160,16 @@ describe('mcp server', function suite() {
 
       const result = await client.getPrompt({ name: 'review', arguments: { repository: 'oss-review' } });
       const promptMessages = result.messages ?? [];
-      assume(promptMessages).has.length(1);
-      assume(promptMessages[0]?.content?.type).equals('text');
-      assume(promptMessages[0]?.content?.text).includes('Repository under review: oss-review.');
-      assume(promptMessages[0]?.content?.text).includes('general readiness');
+      assume(promptMessages).has.length(2);
+
+      const persona = promptMessages[0];
+      assume(persona.content).has.property('type', 'text');
+      assume(persona.content?.text).includes('OSS Readiness Deep Reviewer');
+
+      const guidance = promptMessages[1];
+      assume(guidance.content).has.property('type', 'text');
+      assume(guidance.content?.text).includes('Repository under review: oss-review.');
+      assume(guidance.content?.text).includes('general readiness');
     });
   });
 });
