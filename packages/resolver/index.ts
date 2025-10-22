@@ -18,7 +18,14 @@ export interface ResolveOptions {
 }
 
 export interface ResolverCLIOptions extends ResolveOptions {
-  config?: string[];
+  config?: string | string[];
+}
+
+type ConfigInput = string | readonly string[];
+
+function normalizeInputs(inputs: ConfigInput): string[] {
+  if (Array.isArray(inputs)) return Array.from(inputs);
+  return [inputs as string];
 }
 
 /**
@@ -37,14 +44,17 @@ async function resolveConfigExport(module: unknown): Promise<ConfigInstance> {
   candidates.push(module);
 
   for (const candidate of candidates) {
-    if (candidate instanceof Config) return candidate;
+    if (!candidate) continue;
     if (typeof candidate === 'function') {
       const result = await candidate();
-      if (result instanceof Config) return result;
+      if (result) return result as ConfigInstance;
+      continue;
     }
+
+    return candidate as ConfigInstance;
   }
 
-  throw new Error('Unsupported config export. Expected Config instance.');
+  throw new Error('Unsupported config export. Expected configuration value.');
 }
 
 /**
@@ -374,13 +384,14 @@ export function mergeConfigs(configs: ConfigInstance[]): ConfigInstance {
  * @param options - Resolve behaviour options
  * @returns Array of Config instances, preserving the input order
  */
-export async function resolveConfigs(inputs: string[], options: ResolveOptions = {}): Promise<ConfigInstance[]> {
+export async function resolveConfigs(inputs: ConfigInput, options: ResolveOptions = {}): Promise<ConfigInstance[]> {
+  const queue = normalizeInputs(inputs);
   const resolved: ConfigInstance[] = [];
   const { registry } = options;
 
-  debug('resolve config inputs %o', inputs);
+  debug('resolve config inputs %o', queue);
 
-  for (const input of inputs) {
+  for (const input of queue) {
     if (isPathSpec(input)) {
       const filePath = resolve(input);
       resolved.push(await loadFromFile(filePath));

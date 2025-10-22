@@ -21,6 +21,16 @@ describe('config resolver', () => {
     assume((config as Config).source).equals('default-export');
   });
 
+  it('accepts single string inputs (matching CLI usage)', async () => {
+    const configPath = fixturePath('config-default.mjs');
+
+    const configs = await resolveConfigs(configPath);
+
+    assume(configs).is.length(1);
+    assume(configs[0]).is.instanceOf(Config);
+    assume((configs[0] as Config).id).equals('default');
+  });
+
   it('resolves Config instances returned by factory functions', async () => {
     const [config] = await resolveConfigs([fixturePath('config-factory.mjs')]);
 
@@ -29,8 +39,18 @@ describe('config resolver', () => {
     assume((config as Config).source).equals('factory-export');
   });
 
-  it('rejects when module does not expose a Config instance', async () => {
-    await rejects(() => resolveConfigs([fixturePath('config-invalid.mjs')]));
+  it('resolves Config clones even when prototype differs', async () => {
+    const clonePath = fixturePath('config-clone.mjs');
+
+    const [config] = await resolveConfigs([clonePath]);
+
+    assume((config as Config).id).equals('clone');
+  });
+
+  it('returns whatever value the module exports', async () => {
+    const [config] = await resolveConfigs([fixturePath('config-invalid.mjs')]);
+
+    assume(config).deep.equals({ id: 'invalid', source: 'invalid' });
   });
 
   it('rejects json files that do not contain Config instances', async () => {
