@@ -19,12 +19,19 @@ export interface ServerOptions {
 
 export class Server {
   private server: McpServer;
-  private config?: ConfigInstance;
+  private config: ConfigInstance;
 
   /**
    * Create a new MCP server instance with a single search tool and entries resource.
    */
+  /**
+   * Bootstrap a new MCP server instance with a mandatory configuration.
+   *
+   * @param options - Server initialisation options including required config
+   */
   constructor(options: ServerOptions = {}) {
+    if (!options.config) throw new Error('MCP server requires a configuration instance.');
+
     this.config = options.config;
     this.server = new McpServer({
       title: 'OSS Review MCP Server',
@@ -106,6 +113,12 @@ export class Server {
    *
    * If no transport is provided, uses stdio transport by default.
    */
+  /**
+   * Start the MCP server using the provided transport.
+   *
+   * @param transport - Optional transport instance (defaults to stdio)
+   * @returns Promise resolving once the server is connected
+   */
   async start(transport?: any) {
     const t = transport || new StdioServerTransport();
 
@@ -126,10 +139,33 @@ export class Server {
 }
 
 /**
- * Factory for creating a new MCP server instance.
+ * Factory for creating a configured MCP server instance.
+ *
+ * @param options - Server initialisation options including configuration
+ * @returns New MCP server ready for start()
  */
 export function mcp(options: ServerOptions = {}): Server {
   debug('creating oss-review mcp instance');
   return new Server(options);
+}
+
+/**
+ * Simple templating helper using double-curly placeholders (e.g. {{ year }}, {{ profile.name }}).
+ *
+ * @param template - Raw template string containing placeholders
+ * @param data - Data object used for substitution
+ * @returns Rendered template string with placeholders replaced
+ */
+export function template(template: string, data: Record<string, unknown>): string {
+  return template.replace(/{{\s*([\w.]+)\s*}}/g, (match, key) => {
+    const value = key.split('.').reduce<unknown>((acc, segment) => {
+      if (acc && typeof acc === 'object' && segment in acc) return (acc as Record<string, unknown>)[segment];
+      return undefined;
+    }, data);
+
+    if (value === undefined || value === null) return match;
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  });
 }
 

@@ -15,12 +15,12 @@ export interface MCPTextResponse {
 
 export interface ToolContext {
   server: ServerInstance;
-  config?: ConfigInstance;
+  config: ConfigInstance;
 }
 
 export interface ResourceContext {
   server: ServerInstance;
-  config?: ConfigInstance;
+  config: ConfigInstance;
 }
 
 export interface SearchDocument {
