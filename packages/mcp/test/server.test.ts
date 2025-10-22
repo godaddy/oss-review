@@ -16,23 +16,28 @@ function fixturePath(name: string): string {
 /**
  * Create a configuration instance pointing at the test fixtures directory.
  *
+ * @param overrides - Optional configuration overrides
  * @returns Config populated with profile metadata and resource definitions
  */
-function createConfig(): Config {
+function createConfig(overrides?: ConfigOptions): Config {
   return new Config({
-    profile: { name: 'GoDaddy' },
-    resources: [{ name: 'LICENSE', path: fixturePath('LICENSE') }]
+    profile: { name: 'GoDaddy', securityEmail: 'security@godaddy.com' },
+    resources: [
+      { name: 'LICENSE', path: fixturePath('LICENSE') }
+    ],
+    ...overrides
   });
 }
 
 /**
  * Provision MCP server and client connected over in-memory transports.
  *
+ * @param overrides - Optional configuration overrides
  * @returns Object containing the initialised server, client, and config instance
  */
-async function create() {
+async function create(overrides?: ConfigOptions) {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const config = createConfig();
+  const config = createConfig(overrides);
   const server = mcp({ config });
   await server.start(serverTransport);
 
@@ -73,15 +78,33 @@ describe('mcp server', function suite() {
     it('lists and reads configured resources with templating', async function run() {
       ({ server, client } = await create());
 
-    const list = await client.listResources();
-    assume(list.resources).has.length(1);
-    assume(list.resources[0]).has.property('name', 'LICENSE');
-    assume(list.resources[0]).has.property('title', 'LICENSE');
+      const list = await client.listResources();
+      assume(list.resources).has.length(1);
+      assume(list.resources[0]).has.property('name', 'LICENSE');
+      assume(list.resources[0]).has.property('title', 'LICENSE');
 
-    const read = await client.readResource({ uri: list.resources[0]!.uri });
-    const content = read.contents?.[0];
-    assume(content?.text).includes(`Copyright ${new Date().getFullYear()} GoDaddy`);
-    assume(content?.text).includes('Apache License, Version 2.0');
+      const read = await client.readResource({ uri: list.resources[0]!.uri });
+      const content = read.contents?.[0];
+      assume(content?.text).includes(`Copyright ${new Date().getFullYear()} GoDaddy`);
+      assume(content?.text).includes('Apache License, Version 2.0');
+    });
+
+    it('lists and reads multiple resources', async function run() {
+      ({ server, client } = await create({
+        resources: [
+          { name: 'LICENSE', path: fixturePath('LICENSE') },
+          { name: 'SECURITY.md', path: fixturePath('SECURITY.md') }
+        ]
+      }));
+
+      const list = await client.listResources();
+      assume(list.resources.map((resource) => resource.name)).deep.equals(['LICENSE', 'SECURITY.md']);
+
+      const license = await client.readResource({ uri: list.resources.find((r) => r.name === 'LICENSE')!.uri });
+      assume(license.contents?.[0]?.text).includes('Apache License, Version 2.0');
+
+      const security = await client.readResource({ uri: list.resources.find((r) => r.name === 'SECURITY.md')!.uri });
+      assume(security.contents?.[0]?.text).includes('security@godaddy.com');
     });
   });
 });
