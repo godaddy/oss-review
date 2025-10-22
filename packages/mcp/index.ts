@@ -1,7 +1,9 @@
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import packageInfo from '../../package.json' with { type: 'json' };
+import type { Prompts, PromptDefinition } from './types.ts';
 import { entries } from './resources/entries.ts';
+import { review } from './prompts/review.ts';
 import { search } from './tools/search.ts';
 import { readFileSync } from 'node:fs';
 import diagnostics from 'diagnostics';
@@ -22,9 +24,6 @@ export class Server {
   private config: ConfigInstance;
 
   /**
-   * Create a new MCP server instance with a single search tool and entries resource.
-   */
-  /**
    * Bootstrap a new MCP server instance with a mandatory configuration.
    *
    * @param options - Server initialisation options including required config
@@ -35,22 +34,28 @@ export class Server {
     this.config = options.config;
     this.server = new McpServer({
       title: 'OSS Review MCP Server',
-      name: packageInfo.name,
-      version: packageInfo.version
+      version: packageInfo.version,
+      name: packageInfo.name
     }, {
       //
       // Instructions describing how to use the server and its features, which
       // should allow LLMs/Agents to use the server correctly.
       //
-      instructions: readFileSync(join(import.meta.dirname, 'instructions.md'), 'utf8')
+      instructions: this.template(readFileSync(join(import.meta.dirname, 'instructions.md'), 'utf8'), {
+        profile: this.config.getProfile(),
+        version: packageInfo.version
+      })
     });
-
     this.tools({
       search: search({ server: this, config: this.config })
     });
 
     this.resources({
       entries: entries({ server: this, config: this.config })
+    });
+
+    this.prompts({
+      review: review({ server: this, config: this.config })
     });
   }
 
@@ -69,6 +74,8 @@ export class Server {
         try {
           return await tool.exec(args, extra);
         } catch (error) {
+          debug('failed to execute tool', error);
+
           return {
             isError: true,
             contents: [{
@@ -95,6 +102,8 @@ export class Server {
         try {
           return await resource.read({ params: { uri: uri.toString() } });
         } catch (error) {
+          debug('failed to read resource', error);
+
           return {
             isError: true,
             contents: [{
@@ -105,6 +114,61 @@ export class Server {
           };
         }
       });
+    });
+  }
+
+  /**
+   * Register prompts on the MCP server.
+   *
+   * @param prompts - Mapping of prompt name to prompt definition with metadata and exec()
+   */
+  private prompts(prompts: Prompts): void {
+    Object.entries(prompts).forEach(([name, prompt]: [string, PromptDefinition]) => {
+      this.server.registerPrompt(name, {
+        title: prompt.title.trim(),
+        description: prompt.description.trim(),
+        argsSchema: prompt.argsSchema
+      }, async (args: any, extra?: any) => {
+        try {
+          return await prompt.exec(args, extra);
+        } catch (error) {
+          debug('failed to execute prompt', error);
+
+          return {
+            isError: true,
+            description: prompt.description.trim(),
+            messages: [{
+              role: 'assistant',
+              content: {
+                type: 'text',
+                text: error instanceof Error ? error.message : String(error)
+              }
+            }]
+          };
+        }
+      });
+    });
+  }
+
+  /**
+   * Render a template string using double-curly placeholders.
+   *
+   * @param input - Template string containing placeholders (e.g. {{ profile.name }})
+   * @param data - Data map used to resolve placeholder values
+   * @returns Rendered string with placeholders replaced when data is available
+   */
+  public template(input: string, data: Record<string, unknown>): string {
+    return input.replace(/{{\s*([\w.]+)\s*}}/g, (match, key) => {
+      const value = key.split('.').reduce<unknown>((acc, segment) => {
+        if (acc && typeof acc === 'object' && segment in acc) {
+          return (acc as Record<string, unknown>)[segment];
+        }
+        return undefined;
+      }, data);
+
+      if (value === undefined || value === null) return match;
+      if (typeof value === 'object') return JSON.stringify(value);
+      return String(value);
     });
   }
 

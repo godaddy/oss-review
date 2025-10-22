@@ -107,4 +107,38 @@ describe('mcp server', function suite() {
       assume(security.contents?.[0]?.text).includes('security@godaddy.com');
     });
   });
+
+  describe('prompts', () => {
+    it('lists and renders the review prompt with instructions', async function run() {
+      ({ server, client } = await create({
+        instructions: [{ name: 'review', content: 'Always mention {{ profile.name }} when reviewing {{ args.repository }}.' }]
+      }));
+
+      const list = await client.listPrompts();
+      assume(list.prompts.map((prompt) => prompt.name)).includes('review');
+
+      const result = await client.getPrompt({ name: 'review', arguments: { repository: 'oss-review', focus: 'security controls' } });
+      const promptMessages = result.messages ?? [];
+      assume(promptMessages).has.length(2);
+      const guidance = promptMessages[0];
+      assume(guidance.content).has.property('type', 'text');
+      assume(guidance.content).has.property('text').includes('Repository under review: oss-review');
+      assume(guidance.content?.text).includes('security controls');
+
+      const instruction = promptMessages[1];
+      assume(instruction.content).has.property('text').includes('GoDaddy');
+      assume(instruction.content?.text).includes('oss-review');
+    });
+
+    it('provides sensible defaults and templating when optional arguments are omitted', async function run() {
+      ({ server, client } = await create());
+
+      const result = await client.getPrompt({ name: 'review', arguments: { repository: 'oss-review' } });
+      const promptMessages = result.messages ?? [];
+      assume(promptMessages).has.length(1);
+      assume(promptMessages[0]?.content?.type).equals('text');
+      assume(promptMessages[0]?.content?.text).includes('Repository under review: oss-review');
+      assume(promptMessages[0]?.content?.text).includes('general readiness');
+    });
+  });
 });

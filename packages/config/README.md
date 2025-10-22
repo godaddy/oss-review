@@ -102,7 +102,7 @@ information, official names, domains).
 ```ts
 const config = new Config();
 
-config.profile({
+config.mergeProfile({
   name: 'GoDaddy',
   securityEmail: 'security@godaddy.com'
 });

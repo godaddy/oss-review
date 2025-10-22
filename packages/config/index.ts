@@ -180,12 +180,25 @@ export class Config {
   }
 
   /**
-   * Retrieve all configured instructions.
+   * Retrieve configured instructions.
    *
-   * @returns A shallow copy of configured instructions
+   * When a name is provided, only the matching instruction (if any) is
+   * returned. Otherwise all instructions are returned.
+   *
+   * @returns A shallow copy of configured instructions or a single entry when name is supplied
    */
-  getInstructions(): InstructionEntry[] {
-    return [...this.instructions];
+  getInstructions(): InstructionEntry[];
+  getInstructions(name: string): InstructionEntry | undefined;
+  getInstructions(name?: string): InstructionEntry[] | InstructionEntry | undefined {
+    if (typeof name === 'string') {
+      const trimmed = name.trim();
+      if (!trimmed) return undefined;
+
+      const instruction = this.instructions.find((entry) => entry.name === trimmed);
+      return instruction ? { ...instruction } : undefined;
+    }
+
+    return this.instructions.map((instruction) => ({ ...instruction }));
   }
 
   /**

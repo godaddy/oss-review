@@ -163,6 +163,30 @@ describe('Config instruction helpers', () => {
     assume(config.getInstructions()).deep.equals([{ name: 'overview', content: 'Updated content.', summary: 'Summary' }]);
   });
 
+  it('returns a single instruction when name is provided', () => {
+    const config = new Config({
+      instructions: [{ name: 'overview', content: 'Provide release overview.' }]
+    });
+
+    assume(config.getInstructions('overview')).deep.equals({ name: 'overview', content: 'Provide release overview.' });
+  });
+
+  it('returns undefined when instruction name is missing', () => {
+    const config = new Config({
+      instructions: [{ name: 'overview', content: 'Provide release overview.' }]
+    });
+
+    assume(config.getInstructions('not-found')).is.undefined();
+  });
+
+  it('returns undefined when name is only whitespace', () => {
+    const config = new Config({
+      instructions: [{ name: 'overview', content: 'Provide release overview.' }]
+    });
+
+    assume(config.getInstructions('   ')).is.undefined();
+  });
+
   it('requires a non-empty name', () => {
     const config = new Config();
 
