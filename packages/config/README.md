@@ -94,6 +94,22 @@ Adds or updates a resource entry. Resources are deduplicated by `name`; calling
 Returns the list of configured resources. The returned array is a shallow copy
 so callers can safely modify it without affecting the stored configuration.
 
+### Templates (recommended)
+
+Publish your document templates in your config package and register them as resources so the MCP `entries` endpoint can serve them to LLMs:
+
+```ts
+config.resource('LICENSE', require.resolve('@your-config/resources/templates/LICENSE'));
+config.resource('SECURITY.md', require.resolve('@your-config/resources/templates/SECURITY.md'));
+config.resource('CONTRIBUTING.md', require.resolve('@your-config/resources/templates/CONTRIBUTING.md'));
+config.resource('CODE_OF_CONDUCT.md', require.resolve('@your-config/resources/templates/CODE_OF_CONDUCT.md'));
+```
+
+Templates can include placeholders used by the MCP server when rendering:
+- `{{ year }}`
+- `{{ profile.name }}`
+- `{{ profile.securityEmail }}`
+
 ## Company Profile API
 
 Capture company metadata that can be merged into templates (e.g. contact
@@ -153,6 +169,30 @@ instructions in UIs.
 ### `config.getInstructions()`
 
 Returns the list of configured instructions.
+
+## Tool Configuration API
+
+Store arbitrary configuration for MCP tools so that server integrations can pick up defaults from a central package.
+
+```ts
+const config = new Config();
+
+config.tool('secretlint', {
+  strict: true,
+  preset: '@secretlint/secretlint-rule-preset-recommend',
+  exclude: ['dist', 'coverage']
+});
+
+const secretlintConfig = config.getTool('secretlint');
+```
+
+### `config.tool(name, settings)`
+
+Adds or replaces configuration for the given tool name. `name` must be a non-empty string, and `settings` can be any JSON-serialisable structure (object, array, primitives).
+
+### `config.getTool(name)`
+
+Retrieves the configuration stored for `name`, or `undefined` when no configuration exists.
 
 ## Detection API
 

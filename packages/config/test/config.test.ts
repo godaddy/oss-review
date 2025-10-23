@@ -200,6 +200,44 @@ describe('Config instruction helpers', () => {
   });
 });
 
+describe('Config tool helpers', () => {
+  it('returns tool configuration supplied via constructor', () => {
+    const config = new Config({
+      tools: {
+        secretlint: { strict: false }
+      }
+    });
+
+    assume(config.getTool('secretlint')).deep.equals({ strict: false });
+  });
+
+  it('adds tool configuration via tool()', () => {
+    const config = new Config();
+
+    config.tool('secretlint', { preset: 'custom' });
+
+    assume(config.getTool('secretlint')).deep.equals({ preset: 'custom' });
+  });
+
+  it('replaces existing configuration for the same tool', () => {
+    const config = new Config({
+      tools: {
+        secretlint: { strict: true }
+      }
+    });
+
+    config.tool('secretlint', { strict: false, exclude: ['dist'] });
+
+    assume(config.getTool('secretlint')).deep.equals({ strict: false, exclude: ['dist'] });
+  });
+
+  it('requires a non-empty tool name', () => {
+    const config = new Config();
+
+    assume(() => config.tool('', {})).throws('Tool entry requires a non-empty "name".');
+  });
+});
+
 describe('Config detection helpers', () => {
   it('returns detection buckets supplied via constructor', () => {
     const config = new Config({

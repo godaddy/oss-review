@@ -10,10 +10,22 @@ import { mcp } from '../index.ts';
 
 const fixturesDir = fileURLToPath(new URL('./fixtures/', import.meta.url));
 
+interface SecretlintToolOptions {
+  exclude?: string[];
+  strict?: boolean;
+  locale?: string;
+  maskSecrets?: boolean;
+  noPhysicFilePath?: boolean;
+  noPhysicalFilePath?: boolean;
+}
+
 export interface ConfigOptions {
   profile?: { name: string; securityEmail: string };
   resources?: { name: string; path: string }[];
   instructions?: { name: string; content: string }[];
+  tools?: {
+    secretlint?: SecretlintToolOptions | { [key: string]: unknown };
+  };
 }
 
 /**
@@ -30,12 +42,23 @@ export function fixturePath(name: string): string {
  * @returns Config populated with profile metadata and resource definitions
  */
 function createConfig(overrides?: ConfigOptions): Config {
+  const { tools: overrideTools, ...restOverrides } = overrides ?? {};
+
   return new Config({
     profile: { name: 'GoDaddy', securityEmail: 'security@godaddy.com' },
     resources: [
       { name: 'LICENSE', path: fixturePath('LICENSE') }
     ],
-    ...overrides
+    tools: {
+      secretlint: {
+        strict: true,
+        locale: 'en',
+        maskSecrets: false,
+        noPhysicalFilePath: true
+      },
+      ...overrideTools
+    },
+    ...restOverrides
   });
 }
 

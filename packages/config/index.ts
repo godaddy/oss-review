@@ -42,6 +42,8 @@ export interface ConfigOptions {
   detection?: DetectionConfig;
   /** Profile information used for templating and documentation. */
   profile?: Profile;
+  /** Arbitrary tool configuration keyed by tool name. */
+  tools?: Record<string, unknown>;
   /** Allow storing additional configuration for future requirements. */
   [key: string]: unknown;
 }
@@ -114,6 +116,8 @@ export class Config {
   private readonly profileData: Profile;
   /** Detection configuration describing references to flag. */
   private readonly detectionBuckets: DetectionBuckets;
+  /** Tool configuration keyed by tool name. */
+  private readonly toolConfigs: Record<string, unknown>;
 
   /**
    * Create a configuration wrapper.
@@ -121,7 +125,7 @@ export class Config {
    * @param options - Optional configuration inputs used to seed the instance
    */
   constructor(options: ConfigOptions = {}) {
-    const { licenses = {}, resources = [], instructions = [], detection = {}, profile = {}, ...rest } = options;
+    const { licenses = {}, resources = [], instructions = [], detection = {}, profile = {}, tools = {}, ...rest } = options;
     this.licenses = {
       green: [...(licenses.green ?? [])],
       yellow: [...(licenses.yellow ?? [])],
@@ -138,6 +142,14 @@ export class Config {
     }
 
     this.profileData = { ...profile };
+
+    this.toolConfigs = {};
+    Object.entries(tools as Record<string, unknown>).forEach(([name, settings]) => {
+      if (typeof name === 'string') {
+        const trimmed = name.trim();
+        if (trimmed) this.toolConfigs[trimmed] = settings;
+      }
+    });
 
     Object.assign(this, rest);
   }
@@ -230,6 +242,35 @@ export class Config {
     checkAndSet(this.instructions, normalizedName, normalized, (entry) => entry.name);
 
     return this;
+  }
+
+  /**
+   * Store arbitrary configuration for a named tool.
+   *
+   * @param name - Tool identifier (e.g. secretlint)
+   * @param settings - Configuration object passed to the tool at runtime
+   * @returns The current Config instance for chaining
+   */
+  tool(name: string, settings: unknown): this {
+    if (typeof name !== 'string' || !name.trim()) {
+      throw new Error('Tool entry requires a non-empty "name".');
+    }
+
+    this.toolConfigs[name.trim()] = settings;
+    return this;
+  }
+
+  /**
+   * Retrieve configuration previously stored for the named tool.
+   *
+   * @param name - Tool identifier (e.g. secretlint)
+   * @returns Cloned configuration object when present, otherwise undefined
+   */
+  getTool(name: string): unknown {
+    if (typeof name !== 'string') return undefined;
+    const trimmed = name.trim();
+    if (!trimmed) return undefined;
+    return this.toolConfigs[trimmed];
   }
 
   /**

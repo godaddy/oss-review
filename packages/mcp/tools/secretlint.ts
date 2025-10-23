@@ -6,12 +6,30 @@ import diagnostics from 'diagnostics';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
 
-interface SecretlintArgs {
+type SecretlintArgs = {
   /** Absolute or relative path to scan */
   target: string;
   /** Treat warnings as errors. Defaults to true. */
   strict?: boolean;
-}
+  /** Additional directories to ignore while walking folders. */
+  exclude?: unknown;
+  /** Optional locale supplied to Secretlint. */
+  locale?: string;
+  /** Whether secrets should be masked in the output (Secretlint option). */
+  maskSecrets?: boolean;
+  /** Support typo variant for backwards compatibility. */
+  noPhysicFilePath?: boolean;
+  /** Secretlint option controlling whether file paths are considered physical. */
+  noPhysicalFilePath?: boolean;
+  /** Optional preset or rule references to load Secretlint rules. */
+  preset?: unknown;
+  /** Optional explicit rule descriptors to load Secretlint rules. */
+  rules?: unknown;
+  /** Optional full Secretlint config override. */
+  secretlintConfig?: unknown;
+  /** Optional full Secretlint config override using generic key. */
+  config?: unknown;
+} & Record<string, unknown>;
 
 interface SecretlintIssue {
   filePath: string;
@@ -55,7 +73,7 @@ async function statSafe(path: string) {
  * @param root - Absolute directory path to traverse.
  * @returns List of discovered file paths.
  */
-async function collectFiles(root: string): Promise<string[]> {
+async function collectFiles(root: string, excludes: Set<string>): Promise<string[]> {
   const queue: string[] = [root];
   const files: string[] = [];
 
@@ -67,7 +85,7 @@ async function collectFiles(root: string): Promise<string[]> {
     if (stats.isDirectory()) {
       const dirEntries = await fs.readdir(current, { withFileTypes: true });
       for (const entry of dirEntries) {
-        if (DEFAULT_EXCLUDES.has(entry.name)) continue;
+        if (excludes.has(entry.name)) continue;
         if (entry.name.startsWith('.git')) continue;
         queue.push(join(current, entry.name));
       }
@@ -78,6 +96,75 @@ async function collectFiles(root: string): Promise<string[]> {
   }
 
   return files;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+async function loadSecretlintModule(moduleId: string): Promise<unknown> {
+  try {
+    const mod = await import(moduleId);
+    const candidate = (mod as any)?.default ?? mod;
+    return candidate?.creator ?? candidate?.default ?? candidate;
+  } catch (error) {
+    throw new Error(`Failed to load Secretlint module "${moduleId}": ${(error as Error).message}`);
+  }
+}
+
+interface ResolvedRule {
+  id: string;
+  rule: unknown;
+  options?: unknown;
+}
+
+async function resolveRuleEntry(entry: unknown): Promise<ResolvedRule | null> {
+  if (!entry) return null;
+
+  if (typeof entry === 'string') {
+    const rule = await loadSecretlintModule(entry);
+    return { id: entry, rule };
+  }
+
+  if (isRecord(entry)) {
+    if (typeof entry.rule !== 'undefined') {
+      const id = typeof entry.id === 'string' && entry.id.trim() ? entry.id.trim() : undefined;
+      if (!id) throw new Error('Custom Secretlint rule entry requires a non-empty "id" when providing inline "rule".');
+      const descriptor: ResolvedRule = { id, rule: entry.rule };
+      if ('options' in entry) descriptor.options = entry.options;
+      return descriptor;
+    }
+
+    const moduleName = typeof entry.module === 'string' && entry.module.trim()
+      ? entry.module.trim()
+      : typeof entry.name === 'string' && entry.name.trim()
+        ? entry.name.trim()
+        : undefined;
+
+    if (!moduleName) return null;
+
+    const rule = await loadSecretlintModule(moduleName);
+    const descriptor: ResolvedRule = {
+      id: typeof entry.id === 'string' && entry.id.trim() ? entry.id.trim() : moduleName,
+      rule
+    };
+    if ('options' in entry) descriptor.options = entry.options;
+    return descriptor;
+  }
+
+  return null;
+}
+
+async function resolveRules(value: unknown): Promise<ResolvedRule[]> {
+  const inputs = Array.isArray(value) ? value : typeof value !== 'undefined' ? [value] : [];
+  const resolved: ResolvedRule[] = [];
+
+  for (const entry of inputs) {
+    const rule = await resolveRuleEntry(entry);
+    if (rule) resolved.push(rule);
+  }
+
+  return resolved;
 }
 
 /**
@@ -116,8 +203,15 @@ function formatIssues(targetPath: string, scanned: number, issues: SecretlintIss
  * @param _context - Current MCP tool context (unused but reserved for future config wiring).
  * @returns Tool definition exposing metadata, schema, and executor.
  */
-export function secretlint(_context: ToolContext) {
-  async function exec({ target, strict = true }: SecretlintArgs): Promise<MCPTextResponse> {
+export function secretlint(context: ToolContext) {
+  const config = context.config.getTool('secretlint') ?? {};
+  const defaults = typeof config === 'object' && !Array.isArray(config) ? { ...(config as Record<string, unknown>) } : {};
+
+  async function exec(rawArgs: SecretlintArgs): Promise<MCPTextResponse> {
+    const mergedArgs = { ...defaults, ...rawArgs } as SecretlintArgs;
+    const resolvedStrict = mergedArgs.strict ?? defaults.strict;
+    const strict = typeof resolvedStrict === 'boolean' ? resolvedStrict : true;
+    const { target } = mergedArgs;
     const trimmed = target?.trim();
     if (!trimmed) {
       return {
@@ -135,21 +229,68 @@ export function secretlint(_context: ToolContext) {
       };
     }
 
-    const files = stats.isDirectory() ? await collectFiles(root) : [root];
+    const excludes = new Set<string>(DEFAULT_EXCLUDES);
+
+    const excludeValues = mergedArgs.exclude ?? defaults.exclude;
+    if (Array.isArray(excludeValues)) {
+      for (const value of excludeValues) {
+        if (typeof value === 'string' && value.trim()) excludes.add(value.trim());
+      }
+    } else if (excludeValues instanceof Set) {
+      for (const value of excludeValues) {
+        if (typeof value === 'string' && value.trim()) excludes.add(value.trim());
+      }
+    } else if (typeof excludeValues === 'string' && excludeValues.trim()) {
+      excludes.add(excludeValues.trim());
+    }
+
+    const files = stats.isDirectory() ? await collectFiles(root, excludes) : [root];
     if (!files.length) {
       return {
         content: [{ type: 'text', text: `No files found to scan at ${root}.` }]
       };
     }
 
-    const coreConfig = {
-      rules: [
-        {
+    const presetInput = mergedArgs.preset ?? defaults.preset;
+    const rulesInput = mergedArgs.rules ?? mergedArgs.rule ?? defaults.rules ?? defaults.rule;
+    const explicitConfig = mergedArgs.secretlintConfig ?? mergedArgs.config ?? defaults.secretlintConfig ?? defaults.config;
+
+    let configRules: ResolvedRule[] | undefined;
+    let configObject: Record<string, unknown> | undefined;
+
+    if (explicitConfig && isRecord(explicitConfig)) {
+      configObject = { ...explicitConfig };
+    }
+
+    if (!configObject) {
+      const resolvedRules = await resolveRules(rulesInput);
+      if (resolvedRules.length) {
+        configRules = resolvedRules;
+      }
+
+      if ((!configRules || configRules.length === 0) && presetInput) {
+        const presetRules = await resolveRules(presetInput);
+        if (presetRules.length) configRules = presetRules;
+      }
+
+      if (!configRules || configRules.length === 0) {
+        configRules = [{
           id: '@secretlint/secretlint-rule-preset-recommend',
           rule: (recommend as any).creator || (recommend as any)
-        }
-      ]
-    } as any;
+        }];
+      }
+
+      configObject = {
+        rules: configRules.map(rule => {
+          const descriptor: Record<string, unknown> = {
+            id: rule.id,
+            rule: rule.rule
+          };
+          if (typeof rule.options !== 'undefined') descriptor.options = rule.options;
+          return descriptor;
+        })
+      };
+    }
 
     const issues: SecretlintIssue[] = [];
 
@@ -174,10 +315,10 @@ export function secretlint(_context: ToolContext) {
           contentType: 'text'
         },
         options: {
-          config: coreConfig,
-          locale: 'en',
-          maskSecrets: false,
-          noPhysicFilePath: true
+          config: configObject,
+          locale: (mergedArgs.locale ?? defaults.locale ?? 'en') as string,
+          maskSecrets: Boolean(mergedArgs.maskSecrets ?? defaults.maskSecrets ?? false),
+          noPhysicFilePath: Boolean(mergedArgs.noPhysicFilePath ?? defaults.noPhysicalFilePath ?? defaults.noPhysicFilePath ?? true)
         }
       });
 

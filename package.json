@@ -44,6 +44,7 @@
   "devDependencies": {
     "@types/node": "^22.7.9",
     "assume": "^2.3.0",
+    "@secretlint/secretlint-rule-github": "^11.2.5",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3"
   }
