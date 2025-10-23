@@ -197,25 +197,18 @@ export function secretlint(_context: ToolContext) {
     }
 
     const text = formatIssues(root, files.length, issues);
-    const response: MCPTextResponse = {
-      content: [{ type: 'text', text }]
+    const errors = issues.filter(issue => issue.severity === 'error');
+    const warnings = issues.filter(issue => issue.severity === 'warning');
+
+    return {
+      content: [{ type: 'text', text }],
+      isError: false,
+      structuredContent: {
+        ok: errors.length === 0,
+        errors,
+        warnings
+      }
     };
-
-    if (issues.some(issue => issue.severity === 'error')) {
-      response.isError = true;
-      response.structuredContent = {
-        ok: false,
-        errors: issues.filter(issue => issue.severity === 'error'),
-        warnings: issues.filter(issue => issue.severity === 'warning')
-      };
-    } else {
-      response.structuredContent = {
-        ok: true,
-        warnings: issues
-      };
-    }
-
-    return response;
   }
 
   return {
