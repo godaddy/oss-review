@@ -49,7 +49,11 @@ Actions when gaps are found:
 
 `;
 
-const REVIEW_PROMPT_ARGS = {
+/**
+ * Reusable argument schema for the review prompt and tool.
+ * Exported so the review tool can reuse the same schema definition.
+ */
+export const REVIEW_PROMPT_ARGS = {
   repository: z.string().trim().min(1, 'Repository identifier is required.').describe('Repository or project identifier being reviewed.'),
   focus: z.string().trim().min(1).optional().describe('Optional focus area that should receive additional scrutiny.')
 } as const;
