@@ -24,6 +24,10 @@
       "types": "./dist/packages/mcp/index.d.ts",
       "import": "./dist/packages/mcp/index.js"
     },
+    "./advisory": {
+      "types": "./dist/packages/advisory/index.d.ts",
+      "import": "./dist/packages/advisory/index.js"
+    },
     "./config": {
       "types": "./dist/packages/config/index.d.ts",
       "import": "./dist/packages/config/index.js"

@@ -6,6 +6,8 @@ Provides MCP server capabilities and tools for OSS review workflows.
 
 - `search`: Placeholder search implementation used during development.
 - `secretlint`: Scan files or directories to detect potential secrets before release.
+- `licenses`: Analyse SBOMs against configured license policy.
+- `security`: Aggregate vulnerability advisories using configured scanners (e.g. npm audit).
 
 ## Resources
 
