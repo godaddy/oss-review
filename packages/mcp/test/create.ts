@@ -10,15 +10,6 @@ import { mcp } from '../index.ts';
 
 const fixturesDir = fileURLToPath(new URL('./fixtures/', import.meta.url));
 
-interface SecretlintToolOptions {
-  exclude?: string[];
-  strict?: boolean;
-  locale?: string;
-  maskSecrets?: boolean;
-  noPhysicFilePath?: boolean;
-  noPhysicalFilePath?: boolean;
-}
-
 export interface ConfigOptions {
   profile?: { name: string; securityEmail: string };
   resources?: { name: string; path: string }[];
@@ -26,6 +17,7 @@ export interface ConfigOptions {
   detection?: Record<string, unknown[]>;
   tools?: {
     secretlint?: SecretlintToolOptions | { [key: string]: unknown };
+    security?: Record<string, unknown>;
   };
 }
 
@@ -56,6 +48,11 @@ function createConfig(overrides?: ConfigOptions): Config {
         locale: 'en',
         maskSecrets: false,
         noPhysicalFilePath: true
+      },
+      security: {
+        severityThreshold: 'high',
+        includeDev: false,
+        scanners: ['npm-audit']
       },
       ...overrideTools
     },
