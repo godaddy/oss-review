@@ -1,6 +1,6 @@
 # oss-review
 
-Model Context Protocol (MCP) server for OSS review workflows. Provides a minimal boilerplate server with a single tool (`search`) and an example resource (`entries`).
+Model Context Protocol (MCP) server for OSS readiness review workflows. Scans repositories for policy violations, secrets, and sensitive references based on configurable detection patterns.
 
 ## Install
 
@@ -70,15 +70,36 @@ Add the server to your MCP client configuration (examples below).
 ### Tools
 
 - `search`
-  - Description: Search things (boilerplate)
+  - Description: Search files for policy violations based on detection patterns configured in the OSS review policy
+  - Scans directories recursively for regex or keyword patterns
+  - Supports filtering by detection buckets (e.g., "secrets", "sensitive-links")
+  - Reports issues with severity levels, line numbers, and remediation guidance
   - Input schema:
-    - `query` (string, required)
+    - `target` (string, required) - Absolute path to a file or directory to scan
+    - `bucket` (string, optional) - Optional detection bucket name to filter patterns
 
 Example tool input:
 
 ```json
-{ "query": "button" }
+{
+  "target": "/path/to/repository",
+  "bucket": "secrets"
+}
 ```
+
+- `secretlint`
+  - Description: Scan files using Secretlint recommended rules to catch leaked secrets
+  - Input schema:
+    - `target` (string, required) - Absolute path to a file or directory to scan
+    - `strict` (boolean, optional) - Treat warnings as errors (default: true)
+
+- `licenses`
+  - Description: Audit project and dependency licenses against policy using SBOM data
+  - Input schema:
+    - `target` (string, required) - Absolute path to project or repository root
+    - `sbomPath` (string, optional) - Path to existing CycloneDX SBOM JSON
+    - `includeDev` (boolean, optional) - Include development dependencies
+    - `skipGeneration` (boolean, optional) - Skip automatic SBOM generation
 
 ### Resources
 
