@@ -29,6 +29,9 @@ describe('prompts: review', () => {
     const persona = promptMessages[0];
     assume(persona.content).has.property('type', 'text');
     assume(persona.content?.text).includes('OSS Readiness Deep Reviewer');
+    assume(persona.content?.text).includes('Identity and mandate');
+    assume(persona.content?.text).includes('Operating principles');
+    assume(persona.content?.text).includes('Policy‑first');
 
     const guidance = promptMessages[1];
     assume(guidance.content).has.property('type', 'text');
@@ -51,6 +54,9 @@ describe('prompts: review', () => {
     const persona = promptMessages[0];
     assume(persona.content).has.property('type', 'text');
     assume(persona.content?.text).includes('OSS Readiness Deep Reviewer');
+    assume(persona.content?.text).includes('Identity and mandate');
+    assume(persona.content?.text).includes('Operating principles');
+    assume(persona.content?.text).includes('Evidence‑based');
 
     const guidance = promptMessages[1];
     assume(guidance.content).has.property('type', 'text');

@@ -111,9 +111,17 @@ describe('tools/review', () => {
     });
 
     equal(result.isError, false);
-    // Persona should mention the organization and role
-    match(result.content[0].text, /OSS Readiness/i);
-    match(result.content[0].text, /Test Organization/i);
+    const text = result.content[0].text;
+
+    // Persona should contain specific markers from persona.md
+    match(text, /OSS Readiness Deep Reviewer/i);
+    match(text, /Test Organization/i); // Templated from config
+    match(text, /Identity and mandate/i);
+    match(text, /Operating principles/i);
+
+    // Should mention policy-first approach
+    match(text, /Policy.first/i);
+    match(text, /Evidence.based/i);
   });
 
   it('should include review checklist in output', async () => {

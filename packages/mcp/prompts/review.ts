@@ -17,13 +17,14 @@ Conduct a holistic review of the repository focusing on:
 
 If the request includes focus areas, prioritise them: {{ focusTarget }}.
 
-Operate using the available tools and resources exposed by this MCP server (future-state set):
-- "search": Run ripgrep across the codebase using organization-provided internal reference patterns from config; surface file paths and minimal sanitized context for removal.
-- "secretlint": Scan a target path for secrets (args: { target, strict? }). Treat warnings as errors by default (strict: true). Scan repo root and, for monorepos, each package path.
-- "licenses": Audit outbound licensing for the repo/packages using allowed (green) licenses from config; optionally leverage SBOMs to review transitive dependencies.
-- "bfg": For engineers only. When sensitive content is discovered, prepare a BFG Repo-Cleaner command suggestion to purge history for affected paths.
-- "security": Recommend and/or run dependency and code security checks to ensure no known issues remain prior to release.
+Use the following tools and resources to conduct your review:
+- "search": Search files for policy violations based on detection patterns configured in the OSS review policy. Specify a target path and optionally filter by detection bucket (e.g., "secrets", "sensitive-links"). Returns findings with severity levels and file locations.
+- "secretlint": Scan files or directories for leaked secrets using Secretlint recommended rules (args: { target, strict? }). Treat warnings as errors by default (strict: true). Scan repo root and, for monorepos, each package path.
+- "licenses": Audit project and dependency licenses against policy using SBOM data. Validates outbound licensing using allowed (green) licenses from config and optionally analyzes transitive dependencies via SBOMs.
+- "security": Audit project dependencies for known vulnerabilities using advisory providers (currently npm audit). Accepts severity thresholds and ignore lists.
 - "entries" resource: Fetch required document templates by URI (oss-review://resources/{name}) based on what the config exposes. When a required file is missing, read the resource and create the file in the appropriate location.
+
+Note: If sensitive content is discovered in git history, recommend BFG Repo-Cleaner commands for engineers to manually execute (BFG is not an MCP tool).
 
 Checklist derived from internal OSS readiness research (condensed):
 - Documentation and process files
@@ -34,18 +35,19 @@ Checklist derived from internal OSS readiness research (condensed):
   - Run secretlint against the repository root; repeat for each package in a monorepo.
   - Flag hardcoded credentials, tokens, keys, JWTs, basic auth strings, and context-labeled secrets (api/auth/secret/key/token/password variables).
 - Internal references (non-secrets but sensitive)
-  - Flag internal URLs/domains, private IPs, internal API endpoints (/admin, /internal, /debug, /metrics), database connection strings, and infrastructure identifiers (e.g. Kubernetes namespaces, service mesh hosts).
+  - Use the search tool with appropriate detection buckets to find internal URLs/domains, private IPs, internal API endpoints (/admin, /internal, /debug, /metrics), database connection strings, and infrastructure identifiers (e.g. Kubernetes namespaces, service mesh hosts).
 - Licensing and third-party usage (high-level)
   - Use the licenses tool to validate outbound licensing and detect non-green licenses. Where possible, generate or load SBOM and review transitive dependencies.
 - Security posture and repo health (high-level)
+  - Use the security tool to check for known vulnerabilities in dependencies.
   - Verify presence of SECURITY.md, consider baseline security checks (branch protection, code review). Recommend adoption of automated checks when gaps exist.
 - Business logic/IP awareness
   - Escalate complex, proprietary logic (pricing/recommendation/fraud engines) for human review when discovered; avoid reproducing sensitive details in output.
 
 Actions when gaps are found:
 - Create missing docs from resources immediately using entries (names are defined by config). Typical names: LICENSE, SECURITY.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md.
-- Summarize secretlint findings and provide precise file paths and minimal sanitized snippets.
-- Propose CI steps: SBOM generation, SCA, and repository health checks. Where relevant, suggest BFG cleaning commands (engineer-executed) for sensitive history.
+- Summarize secretlint and search findings with precise file paths and minimal sanitized snippets.
+- Propose CI steps: SBOM generation, SCA, and repository health checks. Where relevant, suggest BFG Repo-Cleaner commands (engineer-executed) for sensitive history.
 
 `;
 
