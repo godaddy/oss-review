@@ -1,0 +1,9 @@
+{
+  "name": "@oss-review/syft",
+  "version": "0.0.1",
+  "description": "Typed wrapper around the Syft CLI used throughout the OSS review toolkit.",
+  "type": "module",
+  "license": "MIT",
+  "main": "../../dist/packages/syft/index.js",
+  "types": "../../dist/packages/syft/index.d.ts"
+}

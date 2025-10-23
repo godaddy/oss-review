@@ -6,6 +6,7 @@ import { entries } from './resources/entries.ts';
 import { review } from './prompts/review.ts';
 import { search } from './tools/search.ts';
 import { secretlint } from './tools/secretlint.ts';
+import { licenses } from './tools/licenses.ts';
 import { readFileSync } from 'node:fs';
 import diagnostics from 'diagnostics';
 import { join } from 'node:path';
@@ -49,7 +50,8 @@ export class Server {
     });
     this.tools({
       search: search({ server: this, config: this.config }),
-      secretlint: secretlint({ server: this, config: this.config })
+      secretlint: secretlint({ server: this, config: this.config }),
+      licenses: licenses({ server: this, config: this.config })
     });
 
     this.resources({
