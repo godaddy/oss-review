@@ -23,6 +23,7 @@ export interface ConfigOptions {
   profile?: { name: string; securityEmail: string };
   resources?: { name: string; path: string }[];
   instructions?: { name: string; content: string }[];
+  detection?: Record<string, unknown[]>;
   tools?: {
     secretlint?: SecretlintToolOptions | { [key: string]: unknown };
   };

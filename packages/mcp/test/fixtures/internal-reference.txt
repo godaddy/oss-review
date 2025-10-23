@@ -1,0 +1,11 @@
+This is a sample file with internal references.
+
+You can find more information at https://wiki.example.com/internal-docs
+
+Some private key data:
+-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj
+-----END PRIVATE KEY-----
+
+Contact us at internal-team@example.com
+
