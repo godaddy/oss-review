@@ -8,8 +8,8 @@ import { tmpdir } from 'node:os';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { Server } from '../index.ts';
 import { create, destroy, fixturePath } from './create.ts';
-import SyftScanner from '../../syft/index.ts';
 import { NpmAuditProvider } from '../../advisory/npm.ts';
+import { ca } from 'zod/v4/locales';
 
 describe('tools: security', () => {
   let server: Server | null = null;
@@ -78,15 +78,13 @@ describe('tools: security', () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'oss-review-security-sbom-'));
     const sbom = fixturePath('sample-sbom.json');
 
-    const readSbom = SyftScanner.prototype.readSbom;
-    SyftScanner.prototype.readSbom = async () => ({ bomFormat: 'CycloneDX' } as any);
-
     try {
       const result = await client.callTool({
         name: 'security',
         arguments: {
           target: tmpDir,
           sbomPath: sbom,
+          skipGeneration: true,
           scanners: [],
           failOnUnscanned: false
         }
@@ -94,9 +92,11 @@ describe('tools: security', () => {
 
       assume(result.isError).equals(false);
       const payload = result.structuredContent as any;
+      assume(payload.sbom).is.truthy();
       assume(payload.sbom.source).includes('Provided file');
+    } catch {
+      throw new Error('This should never happen.');
     } finally {
-      SyftScanner.prototype.readSbom = readSbom;
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   });

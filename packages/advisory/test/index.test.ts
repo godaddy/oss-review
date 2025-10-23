@@ -1,8 +1,7 @@
 import { describe, it } from 'node:test';
 import assume from 'assume';
 
-import type {
-  AdvisoryFinding,
+import {
   applyIgnoreRules,
   createEmptySummary,
   loadIgnoreRules,
@@ -11,6 +10,8 @@ import type {
   normaliseSeverity,
   summariseFindings
 } from '../index.ts';
+
+import type { AdvisoryFinding } from '../index.ts';
 
 const sampleFindings: AdvisoryFinding[] = [
   { id: 'GHSA-001', packageName: 'left-pad', severity: 'high', source: 'npm-audit' },

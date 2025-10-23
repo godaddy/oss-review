@@ -333,9 +333,17 @@ export function security(context: ToolContext) {
     title: 'Security Audit',
     description: 'Audit project dependencies for known vulnerabilities using advisory providers.',
     inputSchema: {
-      target: z.string().min(1).describe('Absolute path to project or repository root.'),
-      severityThreshold: z.string().optional().describe('Minimum severity threshold to treat as blocking.'),
-      includeDev: z.boolean().optional().describe('Include development dependencies (default false).')
+      target: z.string().min(1).describe('Absolute or relative path to the repository or package under review.'),
+      sbomPath: z.string().optional().describe('Optional path to an existing CycloneDX SBOM (json).'),
+      skipGeneration: z.boolean().optional().describe('Skip SBOM generation. Requires sbomPath when true.'),
+      includeDev: z.boolean().optional().describe('Include development dependencies (default: false).'),
+      severityThreshold: z.enum(['critical', 'high', 'medium', 'low', 'info']).optional()
+        .describe('Minimum severity that should trigger a failure (default: high).'),
+      scanners: z.array(z.enum(['npm-audit'])).optional().describe('Scanner identifiers to execute (default: npm-audit).'),
+      ignoreIds: z.array(z.string()).optional().describe('Advisory identifiers to ignore for this run.'),
+      ignoreFile: z.string().optional().describe('Path to JSON ignore file containing advisory exceptions.'),
+      cacheDir: z.string().optional().describe('Directory used for scanner caches when supported.'),
+      failOnUnscanned: z.boolean().optional().describe('Fail when no scanner can process the target (default: false).')
     }
   };
 }
