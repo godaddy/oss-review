@@ -44,10 +44,74 @@ Checklist derived from internal OSS readiness research (condensed):
 - Business logic/IP awareness
   - Escalate complex, proprietary logic (pricing/recommendation/fraud engines) for human review when discovered; avoid reproducing sensitive details in output.
 
+MANUAL REVIEW AREAS (tools cannot detect these):
+
+Business Logic and Competitive Advantage Assessment:
+- Identify code with high complexity (likely >100 lines per function, nested conditionals, complex algorithms) that may represent proprietary business logic
+- Look for classes/functions named: *PricingEngine*, *RecommendationAlgorithm*, *FraudDetector*, *RiskScorer*, or containing "Strategy"/"Policy" suffixes
+- Flag comments containing: "proprietary", "confidential", "patent", "competitive advantage", "trade secret", or references to pricing/margins/costs/recommendations/fraud/risk
+- Assess whether algorithms are generic implementations or contain domain-specific optimizations representing competitive advantage
+
+Code Complexity and IP Protection:
+- Identify functions with apparent high cyclomatic complexity (deeply nested logic, multiple branches)
+- Look for standalone modules with minimal dependencies (easier to copy/extract—higher IP risk)
+- Check for code in /internal/, /proprietary/, /core/, or /engine/ directories
+- Flag database schema files that reveal data models and business relationships
+- Assess authentication/authorization code for custom security mechanisms
+
+Export Control and Cryptography:
+- CRITICAL: Flag any cryptographic implementations (encryption, hashing beyond standard libraries, custom crypto algorithms)
+- Note: Cryptographic code may require ECCN classification and export control review (legal requirement with criminal penalties)
+- Look for: crypto libraries, encryption/decryption functions, key generation, certificate handling
+- Escalate immediately if found—this requires legal review before release
+
+Patent and Novel Algorithm Detection:
+- Identify novel algorithms or unique approaches to common problems
+- Flag comments like "TODO: Patent this", "novel approach", "innovative solution"
+- Look for code implementing known company patents (if patent portfolio is available)
+- Suggest patent search for novel algorithms before open source release
+
+Repository Sanitization and History Concerns:
+- Check recent commit history (last 6 months) for rapid development indicating active competitive work
+- Identify TODO comments with employee references: TODO(username) patterns
+- Look for internal URLs in: comments, configuration files, error messages, build scripts
+- Assess whether codebase contains customer/partner names that should be generalized
+- Check for configuration files with production values (should use environment variables)
+
+Maintainer Commitment and Community Readiness:
+- Assess if this appears to be a "side project" vs. strategic investment
+- Look for indicators of maintenance commitment: recent updates, clear roadmap, responsive to issues
+- Evaluate if there's sufficient documentation for external contributors
+- Consider: Is this code maintained and actively developed, or a one-time dump?
+- Red flag: Releasing unmaintained code damages reputation—recommend against release if no maintenance commitment exists
+
+Strategic and Architectural Exposure:
+- Assess whether code reveals internal architecture, microservice topology, or infrastructure details
+- Identify if error messages expose internal tech stack, service names, or network structure
+- Look for build scripts referencing internal artifact repositories or build systems
+- Consider: Does releasing this code provide competitors with insights into our technical approach?
+
+License and Contribution Policy Hygiene:
+- For projects accepting contributions: Verify CLA/DCO strategy is defined
+- Check for "Inbound=Outbound" licensing clarity (contributions come in under same license as project releases)
+- Assess if contribution guidelines are clear and welcoming
+- Verify Code of Conduct exists and includes enforcement procedures
+
 Actions when gaps are found:
 - Create missing docs from resources immediately using entries (names are defined by config). Typical names: LICENSE, SECURITY.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md.
 - Summarize secretlint and search findings with precise file paths and minimal sanitized snippets.
+- For business logic concerns: Recommend human review by engineering leadership and legal counsel before proceeding
+- For export control concerns: STOP and escalate immediately—criminal penalties apply
+- For IP/patent concerns: Recommend patent search and legal review
+- For maintainer commitment gaps: Recommend establishing clear ownership and support commitments before release
 - Propose CI steps: SBOM generation, SCA, and repository health checks. Where relevant, suggest BFG Repo-Cleaner commands (engineer-executed) for sensitive history.
+- For architectural exposure: Suggest abstracting internal references to environment variables and generic interfaces
+
+Risk Escalation Framework:
+- LOW RISK: Generic utilities, framework wrappers, well-documented code with no proprietary logic → Recommend proceeding with automated checks
+- MODERATE RISK: Domain-specific implementations, some business logic, active development → Recommend engineering review (2-week timeline)
+- HIGH RISK: Core algorithms, pricing/fraud/recommendation engines, patent-protected code, recent rapid development, cryptographic implementations → Recommend OSRB approval with legal/security review (presume denial unless strong business case)
+- IMMEDIATE ESCALATION: Cryptographic code (export control), hardcoded production credentials, customer PII, comments indicating trade secrets
 
 `;
 
