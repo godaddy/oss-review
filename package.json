@@ -1,6 +1,6 @@
 {
   "name": "oss-review",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "OSS Review MCP server boilerplate",
   "type": "module",
   "license": "MIT",
