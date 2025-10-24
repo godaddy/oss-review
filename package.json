@@ -1,6 +1,6 @@
 {
   "name": "oss-review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Model Context Protocol (MCP) server for open source release readiness reviews. Scans repositories for secrets, license violations, security vulnerabilities, and sensitive internal references customisable to your organization.",
   "author": "GoDaddy Operating Company, LLC",
   "contributors": [
