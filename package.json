@@ -1,11 +1,43 @@
 {
   "name": "oss-review",
   "version": "1.0.0",
-  "description": "OSS Review MCP server boilerplate",
+  "description": "Model Context Protocol (MCP) server for open source release readiness reviews. Scans repositories for secrets, license violations, security vulnerabilities, and sensitive internal references customisable to your organization.",
+  "author": "GoDaddy Operating Company, LLC",
+  "contributors": [
+    "Arnout Kazemier",
+    "Sambhav Gore"
+  ],
   "type": "module",
   "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "oss",
+    "open-source",
+    "security",
+    "secrets",
+    "license",
+    "sbom",
+    "vulnerability",
+    "compliance",
+    "secretlint",
+    "npm-audit",
+    "claude",
+    "ai"
+  ],
+  "homepage": "https://github.com/godaddy/oss-review#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/godaddy/oss-review.git"
+  },
+  "bugs": {
+    "url": "https://github.com/godaddy/oss-review/issues"
+  },
   "bin": {
     "oss-review": "./dist/bin/cli.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "scripts": {
     "build": "tsup-node",
