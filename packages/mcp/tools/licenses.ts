@@ -37,7 +37,7 @@ interface ComponentReport {
   purl?: string;
   licenses: string[];
   classification: Classification;
-  matchedLicences: Array<{ license: string; category: LicenseCategory | 'unknown' }>;
+  matchedLicences: Array<{ license: string; category: LicenseCategory | 'unknown'; notes?: string }>;
 }
 
 /**
@@ -164,7 +164,7 @@ function analyzeWithPolicy(entries: ReturnType<typeof analyzeBom>['entries'], in
     let hasGreen = false;
     let hasUnknown = false;
 
-    const matchedLicences: Array<{ license: string; category: LicenseCategory | 'unknown' }> = [];
+    const matchedLicences: Array<{ license: string; category: LicenseCategory | 'unknown'; notes?: string }> = [];
 
     if (!normalizedLicenses.length) {
       classification = 'unlicensed';
@@ -178,7 +178,11 @@ function analyzeWithPolicy(entries: ReturnType<typeof analyzeBom>['entries'], in
           continue;
         }
 
-        matchedLicences.push({ license, category: lookup.category });
+        matchedLicences.push({
+          license,
+          category: lookup.category,
+          notes: lookup.source.notes
+        });
 
         if (lookup.category === 'red') {
           classification = 'red';
@@ -299,6 +303,13 @@ function formatReport(target: string, sbomSource: string, analysis: LicenseAnaly
     for (const entry of entries.slice(0, 20)) {
       const licenseSummary = entry.matchedLicences.map((match) => `${match.license} (${match.category})`).join(', ') || 'None';
       lines.push(`- [${entry.classification.toUpperCase()}] ${entry.name}${entry.version ? `@${entry.version}` : ''} — ${licenseSummary}`);
+
+      // Include notes if any matched license has them
+      for (const match of entry.matchedLicences) {
+        if (match.notes) {
+          lines.push(`  Note: ${match.notes}`);
+        }
+      }
     }
     if (entries.length > 20) lines.push(`- ...and ${entries.length - 20} more`);
   };

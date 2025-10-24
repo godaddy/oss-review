@@ -1,6 +1,6 @@
 {
   "name": "oss-review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Model Context Protocol (MCP) server for open source release readiness reviews. Scans repositories for secrets, license violations, security vulnerabilities, and sensitive internal references customisable to your organization.",
   "author": "GoDaddy Operating Company, LLC",
   "contributors": [
@@ -54,19 +54,23 @@
   "exports": {
     "./mcp": {
       "types": "./dist/packages/mcp/index.d.ts",
-      "import": "./dist/packages/mcp/index.js"
+      "import": "./dist/packages/mcp/index.js",
+      "require": "./dist/packages/mcp/index.cjs"
     },
     "./advisory": {
       "types": "./dist/packages/advisory/index.d.ts",
-      "import": "./dist/packages/advisory/index.js"
+      "import": "./dist/packages/advisory/index.js",
+      "require": "./dist/packages/advisory/index.cjs"
     },
     "./config": {
       "types": "./dist/packages/config/index.d.ts",
-      "import": "./dist/packages/config/index.js"
+      "import": "./dist/packages/config/index.js",
+      "require": "./dist/packages/config/index.cjs"
     },
     "./resolver": {
       "types": "./dist/packages/resolver/index.d.ts",
-      "import": "./dist/packages/resolver/index.js"
+      "import": "./dist/packages/resolver/index.js",
+      "require": "./dist/packages/resolver/index.cjs"
     }
   },
   "dependencies": {
